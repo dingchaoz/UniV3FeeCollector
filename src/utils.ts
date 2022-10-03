@@ -13,6 +13,9 @@ export const intToHex = (n: number) => ethers.utils.hexlify(n);
 export const intToPaddedHex = (n: number, bytes: number) =>
   ethers.utils.hexZeroPad(intToHex(n), bytes);
 
+export const jsonRpcProvider = new ethers.providers.JsonRpcProvider(
+  "https://eth-mainnet.g.alchemy.com/v2/" + process.env.ALCHEMY_KEY
+);
 export const blocks = new Blocks(
   "https://eth-mainnet.g.alchemy.com/v2/" + process.env.ALCHEMY_KEY
 );
