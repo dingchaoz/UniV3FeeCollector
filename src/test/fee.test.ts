@@ -1,9 +1,11 @@
-import {
-  logBase,
-} from "../utils";
+import { logBase } from "../utils";
 
 describe("testing tick price computation", () => {
   const base = Math.sqrt(1.0001);
+
+  it("should get ticks correctly from price ", async () => {
+    expect(60).toBe(60);
+  });
 
   it("should get ticks correctly from price ", () => {
     const price = 146840733479;
@@ -22,7 +24,6 @@ describe("testing tick price computation", () => {
     const price =
       Math.pow(Math.sqrt(1.0001), tick) * Math.pow(Math.sqrt(1.0001), tick);
     console.log(price);
-    expect(price).toBe(110328562738.7342)
- 
+    expect(price).toBe(110328562738.7342);
   });
 });

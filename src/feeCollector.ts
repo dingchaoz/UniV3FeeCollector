@@ -9,8 +9,7 @@ import { ethers } from "ethers";
 import { collectEventABI, collectEventNameTypes } from "./constants";
 import * as uniSdk from "@uniswap/v3-sdk";
 import { jsonRpcProvider } from "./utils";
-import { getPoolImmutables,getTokenImmutables } from "./v3Methods";
-
+import { getPoolImmutables, getTokenImmutables } from "./v3Methods";
 
 const alchemyProvider = initProvider();
 const iface = new ethers.utils.Interface(collectEventABI);
@@ -32,17 +31,14 @@ export interface PoolTokenInfo {
  * @returns PoolTokenInfo interface
  */
 export async function getPoolTokenInfo(pool: string): Promise<PoolTokenInfo> {
-  console.log(`.....Fetching pool information.... `)
-  const res = await getPoolImmutables(
-    pool,
-    jsonRpcProvider
-  );
+  console.log(`.....Fetching pool information.... `);
+  const res = await getPoolImmutables(pool, jsonRpcProvider);
   const tickSpacing = res.tickSpacing;
   const token0Address = res.token0;
   const token1Address = res.token1;
-  console.log(`.....Fetching tokens information.... `)
-  const token0 = await getTokenImmutables(token0Address, jsonRpcProvider)
-  const token1 = await getTokenImmutables(token1Address, jsonRpcProvider)
+  console.log(`.....Fetching tokens information.... `);
+  const token0 = await getTokenImmutables(token0Address, jsonRpcProvider);
+  const token1 = await getTokenImmutables(token1Address, jsonRpcProvider);
   const decimal0 = token0.decimals;
   const decimal1 = token1.decimals;
 
@@ -73,7 +69,7 @@ export function getNearestTickFromPrice(
   floor: boolean
 ): number {
   const scaledPrice = (price * 10 ** token1Decimal) / 10 ** token0Decimal;
-  let tick: number
+  let tick: number;
   if (floor) {
     tick = Math.floor(logBase(Math.sqrt(scaledPrice), base));
   } else {
@@ -86,7 +82,7 @@ export function getNearestTickFromPrice(
 /**
  * The major function to get collected fees, it uses eth_log to filter Collect events only emitted from the specified pool
  * and from the starting and ending block, as well as in the specified ticks range
- * @param pool address of pool 
+ * @param pool address of pool
  * @param priceLower lower price of the tick range for fee collection
  * @param priceUpper upper price of the tick range for fee collection
  * @param startTime start time of the time window for fee collection
@@ -105,7 +101,7 @@ export async function getFees(
   const token0Decimal = poolTokenInfo.decimal0;
   const token1Decimal = poolTokenInfo.decimal1;
 
-  console.log(`.....Converting price to nearest usable ticks.... `)
+  console.log(`.....Converting price to nearest usable ticks.... `);
 
   const nearestUsableTickLower = getNearestTickFromPrice(
     priceLower,
@@ -122,10 +118,12 @@ export async function getFees(
     false
   );
 
+  // 230280, 264300
+
   const tickLowerHexPadded = intToPaddedHex(nearestUsableTickLower, tickBytes);
   const tickUpperHexPadded = intToPaddedHex(nearestUsableTickUpper, tickBytes);
-  
-  console.log(`.....Converting time windows to ranges of block numbers.... `)
+
+  console.log(`.....Converting time windows to ranges of block numbers.... `);
 
   const startTimeBlockQuery = await blocks.getDate(startTime);
   const endTimeBlockQuery = await blocks.getDate(endTime);
@@ -135,22 +133,28 @@ export async function getFees(
 
     const logs = await alchemyProvider.core.getLogs({
       address: pool,
-      topics: [eventSig, null, tickLowerHexPadded, tickUpperHexPadded],
+      topics: [eventSig, null],
       fromBlock: fromBlockHex,
       toBlock: toBlockHex,
     });
 
-    let token0AmountTotal = 0
-    let token1AmountTotal = 0
+    let token0AmountTotal = 0;
+    let token1AmountTotal = 0;
 
     logs.forEach((log) => {
       const decoded = iface.parseLog(log);
-      const token0Amount = ethers.utils.formatUnits(decoded.args[4], 8);
-      const token1Amount = ethers.utils.formatUnits(decoded.args[5], 18);
-      token0AmountTotal = token0AmountTotal + parseFloat(token0Amount)
-      token1AmountTotal = token1AmountTotal + parseFloat(token1Amount)
-      
+      const tickLower = decoded.args[2]
+      const tickUpper = decoded.args[3]
+      if (tickLower >= nearestUsableTickLower && tickUpper <= nearestUsableTickUpper) {
+          console.log(`Found a matching log`, decoded)
+          const token0Amount = ethers.utils.formatUnits(decoded.args[4], 8);
+          const token1Amount = ethers.utils.formatUnits(decoded.args[5], 18);
+          token0AmountTotal = token0AmountTotal + parseFloat(token0Amount);
+          token1AmountTotal = token1AmountTotal + parseFloat(token1Amount);
+      }
     });
-    console.log(`....... RESULTS: Collected ${token0AmountTotal} of ${poolTokenInfo.token0Name} and ${token1AmountTotal} of ${poolTokenInfo.token1Name} in the specified pool, price and time range....`);
+    console.log(
+      `....... RESULTS: Collected ${token0AmountTotal} of ${poolTokenInfo.token0Name} and ${token1AmountTotal} of ${poolTokenInfo.token1Name} in the specified pool, price and time range....`
+    );
   }
 }

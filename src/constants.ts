@@ -15,7 +15,6 @@ export const poolImmutablesAbi = [
 
 export const tokenImmutablesAbi = [
   "function decimals() view returns (uint8)",
-    "function symbol() view returns (string)",
-    "function name() view returns (string)",
-
-]
+  "function symbol() view returns (string)",
+  "function name() view returns (string)",
+];
