@@ -50,3 +50,5 @@ and from the starting and ending block, as well as in the specified ticks range.
 
     `npm run test`
 
+    Tests are added to verify the correction of price to tick conversion, as well as uniswap v3 sdk functionality
+
