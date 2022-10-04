@@ -6,7 +6,12 @@ import {
   blocks,
 } from "./utils";
 import { ethers } from "ethers";
-import { collectEventABI, collectEventNameTypes } from "./constants";
+import {
+  collectEventABI,
+  collectEventNameTypes,
+  burnEventNameTypes,
+  burnEventABI,
+} from "./constants";
 import * as uniSdk from "@uniswap/v3-sdk";
 import { jsonRpcProvider } from "./utils";
 import { getPoolImmutables, getTokenImmutables } from "./v3Methods";
@@ -14,6 +19,8 @@ import { getPoolImmutables, getTokenImmutables } from "./v3Methods";
 const alchemyProvider = initProvider();
 const iface = new ethers.utils.Interface(collectEventABI);
 const eventSig = ethers.utils.id(collectEventNameTypes);
+const burnEventSig = ethers.utils.id(burnEventNameTypes);
+const iburnFace = new ethers.utils.Interface(burnEventABI);
 const base = Math.sqrt(1.0001);
 const tickBytes = 32;
 
@@ -138,23 +145,126 @@ export async function getFees(
       toBlock: toBlockHex,
     });
 
+    console.log(`pulled collect logs${logs.length} `);
+
     let token0AmountTotal = 0;
     let token1AmountTotal = 0;
 
-    logs.forEach((log) => {
+    // logs.forEach(async (log) => {
+    //   const txHash = log.transactionHash;
+    //   const decoded = iface.parseLog(log);
+    //   const tickLower = decoded.args[2];
+    //   const tickUpper = decoded.args[3];
+    //   if (
+    //     tickLower >= nearestUsableTickLower &&
+    //     tickUpper <= nearestUsableTickUpper
+    //   ) {
+    //     console.log(`......Found one matching tx with Collect event ${txHash}`);
+    //     const token0Amount = ethers.utils.formatUnits(decoded.args[4], 8);
+    //     const token1Amount = ethers.utils.formatUnits(decoded.args[5], 18);
+    //     console.log(
+    //       `......Collect event ${token0Amount} token0 and ${token0Amount} token1`
+    //     );
+    //     token0AmountTotal = token0AmountTotal + parseFloat(token0Amount);
+    //     token1AmountTotal = token1AmountTotal + parseFloat(token1Amount);
+    //   }
+
+    //   const receipt = await alchemyProvider.core.getTransactionReceipt(txHash);
+    //   const logs = receipt!.logs;
+    //   const burnEvent = logs!.filter((l) => l.topics[0] === burnEventSig);
+    //   if (burnEvent.length === 1) {
+    //     console.log(`..... Found one Burn event from the tx ${txHash}`);
+    //     const decoded = iburnFace.parseLog(burnEvent[0]);
+    //     const token0Amount = ethers.utils.formatUnits(decoded.args[4], 8);
+    //     const token1Amount = ethers.utils.formatUnits(decoded.args[5], 18);
+    //     console.log(
+    //       `......Removed ${token0Amount} token0 and ${token0Amount} token1`
+    //     );
+    //     token0AmountTotal = token0AmountTotal - parseFloat(token0Amount);
+    //     token1AmountTotal = token1AmountTotal - parseFloat(token1Amount);
+    //   }
+    // });
+
+    for (let i = 0; i < logs.length; i++) {
+      const log = logs[i];
+      const txHash = log.transactionHash;
       const decoded = iface.parseLog(log);
-      const tickLower = decoded.args[2]
-      const tickUpper = decoded.args[3]
-      if (tickLower >= nearestUsableTickLower && tickUpper <= nearestUsableTickUpper) {
-          console.log(`Found a matching log`, decoded)
-          const token0Amount = ethers.utils.formatUnits(decoded.args[4], 8);
-          const token1Amount = ethers.utils.formatUnits(decoded.args[5], 18);
-          token0AmountTotal = token0AmountTotal + parseFloat(token0Amount);
-          token1AmountTotal = token1AmountTotal + parseFloat(token1Amount);
+      const tickLower = decoded.args[2];
+      const tickUpper = decoded.args[3];
+      if (
+        tickLower >= nearestUsableTickLower &&
+        tickUpper <= nearestUsableTickUpper
+      ) {
+        console.log(`......Found one matching tx with Collect event ${txHash}`);
+        const token0Amount = ethers.utils.formatUnits(decoded.args[4], 8);
+        const token1Amount = ethers.utils.formatUnits(decoded.args[5], 18);
+        console.log(
+          `......Collect event ${token0Amount} token0 and ${token1Amount} token1`
+        );
+        token0AmountTotal = token0AmountTotal + parseFloat(token0Amount);
+        token1AmountTotal = token1AmountTotal + parseFloat(token1Amount);
       }
-    });
+
+      const receipt = await alchemyProvider.core.getTransactionReceipt(txHash);
+      const txLogs = receipt!.logs;
+      const burnEvent = txLogs!.filter((l) => l.topics[0] === burnEventSig);
+      if (burnEvent.length === 1) {
+        console.log(`..... Found one Burn event from the tx ${txHash}`);
+        const decoded = iburnFace.parseLog(burnEvent[0]);
+        const token0Amount = ethers.utils.formatUnits(decoded.args[4], 8);
+        const token1Amount = ethers.utils.formatUnits(decoded.args[5], 18);
+        console.log(
+          `......Removed ${token0Amount} token0 and ${token1Amount} token1`
+        );
+        token0AmountTotal = token0AmountTotal - parseFloat(token0Amount);
+        token1AmountTotal = token1AmountTotal - parseFloat(token1Amount);
+      }
+    }
     console.log(
       `....... RESULTS: Collected ${token0AmountTotal} of ${poolTokenInfo.token0Name} and ${token1AmountTotal} of ${poolTokenInfo.token1Name} in the specified pool, price and time range....`
     );
+
+    // const burnLogs = await alchemyProvider.core.getLogs({
+    //   address: pool,
+    //   topics: [burnEventSig, null],
+    //   fromBlock: fromBlockHex,
+    //   toBlock: toBlockHex,
+    // });
+    // //console.log(`burn event logs`, burnLogs);
+
+    // let token0RemovedAmountTotal = 0;
+    // let token1RemovedAmountTotal = 0;
+
+    // console.log(`pulled burn logs ${burnLogs.length}`);
+
+    // burnLogs.forEach((log) => {
+    //   const decoded = iburnFace.parseLog(log);
+    //   //console.log(`decoded log`, decoded);
+    //   const tickLower = decoded.args[1];
+    //   const tickUpper = decoded.args[2];
+    //   if (
+    //     tickLower >= nearestUsableTickLower &&
+    //     tickUpper <= nearestUsableTickUpper
+    //   ) {
+    //     const token0Amount = ethers.utils.formatUnits(decoded.args[4], 8);
+    //     const token1Amount = ethers.utils.formatUnits(decoded.args[5], 18);
+    //     //console.log(`removed amount in this tx`, token0Amount,token1Amount);
+    //     token0RemovedAmountTotal =
+    //       token0RemovedAmountTotal + parseFloat(token0Amount);
+    //     token1RemovedAmountTotal =
+    //       token1RemovedAmountTotal + parseFloat(token1Amount);
+    //   }
+    // });
+    // console.log(
+    //   `....... RESULTS: Removed ${token0RemovedAmountTotal} and ${token1RemovedAmountTotal} in the specified pool, price and time range....`
+    // );
+
+    // console.log(
+    //   `....... Net FEE COLLECTED: ${
+    //     token0AmountTotal - token0RemovedAmountTotal
+    //   } and ${
+    //     token1AmountTotal - token1RemovedAmountTotal
+    //   } in the specified pool, price and time range....`
+    // );
   }
 }

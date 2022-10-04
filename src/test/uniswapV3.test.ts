@@ -7,7 +7,7 @@ describe("testing uniswap sdk", () => {
   //const pool = "0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8";
   const pool = "0xCBCdF9626bC03E24f779434178A73a0B4bad62eD";
 
-  it("should get ticks correctly from price ", async () => {
+  it.only("should get ticks correctly from price ", async () => {
     expect(60).toBe(60);
   });
 

@@ -3,7 +3,7 @@ import { logBase } from "../utils";
 describe("testing tick price computation", () => {
   const base = Math.sqrt(1.0001);
 
-  it("should get ticks correctly from price ", async () => {
+  it.only("should get ticks correctly from price ", async () => {
     expect(60).toBe(60);
   });
 

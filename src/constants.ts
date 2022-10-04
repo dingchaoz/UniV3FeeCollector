@@ -1,8 +1,16 @@
 export const collectEventABI = [
   "event Collect(address indexed owner,address recipient,int24 indexed tickLower,int24 indexed tickUpper,uint128 amount0,uint128 amount1)",
 ];
+
 export const collectEventNameTypes =
   "Collect(address,address,int24,int24,uint128,uint128)";
+
+export const burnEventABI = [
+  "event Burn(address indexed owner,int24 indexed tickLower,int24 indexed tickUpper,uint128 amount,uint256 amount0,uint256 amount1)",
+];
+
+export const burnEventNameTypes =
+  "Burn(address,int24,int24,uint128,uint256,uint256)";
 
 export const poolImmutablesAbi = [
   "function factory() external view returns (address)",
