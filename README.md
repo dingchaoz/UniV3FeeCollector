@@ -8,6 +8,7 @@
     - [Demo](#Demo)
     - [Test](#Test)
 
+This repo is a simple and quick implementation of querying collected fees on Uniswap V3 pools from a given pool with a given price range and time window, user can enter the request information in a prompt window on terminal, and the server will query historic logs from Ethereum mainnet, filter them and aggregate collected fees represented in base token and quote token. 
 
 ## Setup
 
@@ -21,13 +22,15 @@
 - ### Enter-request
     The terminal will prompt and ask user to enter the following information
     ```
-      const pool = prompt('Enter a pool address to check collected fees: ')
-      const priceLower = prompt('Enter the lower price for the collected fees liquidity range : ')
-      const priceUpper = prompt('Enter upper price for the collected fees liquidity range: ')
-      const startTime = prompt('Enter start time for the collected fees time window: ')
-      const endTime = prompt('Enter end timefor the collected fees time window : ')
+      prompt('Enter a pool address to check collected fees: ')
+      prompt('Enter the lower price for the collected fees liquidity range : ')
+      prompt('Enter upper price for the collected fees liquidity range: ')
+      prompt('Enter start time in epoch unix time for the collected fees time window: ')
+      prompt('Enter end time in epoch unix time for the collected fees time window : ')
     ```
     
+- ### Demo
+    ![demo](https://raw.githubusercontent.com/dingchaoz/UniV3FeeCollector/functionImp/output.gif)
 - ### Test
 
     `npm run test`
