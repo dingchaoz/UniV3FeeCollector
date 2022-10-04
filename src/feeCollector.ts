@@ -225,6 +225,7 @@ export async function getFees(
       `....... RESULTS: Collected ${token0AmountTotal} of ${poolTokenInfo.token0Name} and ${token1AmountTotal} of ${poolTokenInfo.token1Name} in the specified pool, price and time range....`
     );
 
+    // Another implementation to get burned events in one RPC call and substract token amounts
     // const burnLogs = await alchemyProvider.core.getLogs({
     //   address: pool,
     //   topics: [burnEventSig, null],
