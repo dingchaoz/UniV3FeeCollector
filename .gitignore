@@ -4,3 +4,4 @@ build/
 *.tsbuildinfo
 .vscode
 .env
+.DS_Store

@@ -27,7 +27,7 @@ export interface PoolTokenInfo {
 }
 
 export async function getPoolTokenInfo(pool: string): Promise<PoolTokenInfo> {
-
+  console.log(`.....Fetching pool information.... `)
   const res = await getPoolImmutables(
     pool,
     jsonRpcProvider
@@ -35,6 +35,7 @@ export async function getPoolTokenInfo(pool: string): Promise<PoolTokenInfo> {
   const tickSpacing = res.tickSpacing;
   const token0Address = res.token0;
   const token1Address = res.token1;
+  console.log(`.....Fetching tokens information.... `)
   const token0 = await getTokenImmutables(token0Address, jsonRpcProvider)
   const token1 = await getTokenImmutables(token1Address, jsonRpcProvider)
   const decimal0 = token0.decimals;
@@ -75,6 +76,8 @@ export async function getFees(
   const token0Decimal = poolTokenInfo.decimal0;
   const token1Decimal = poolTokenInfo.decimal1;
 
+  console.log(`.....Converting price to nearest usable ticks.... `)
+
   const nearestUsableTickLower = getNearestTickFromPrice(
     priceLower,
     token0Decimal,
@@ -90,6 +93,8 @@ export async function getFees(
 
   const tickLowerHexPadded = intToPaddedHex(nearestUsableTickLower, tickBytes);
   const tickUpperHexPadded = intToPaddedHex(nearestUsableTickUpper, tickBytes);
+  
+  console.log(`.....Converting time windows to ranges of block numbers.... `)
 
   const startTimeBlockQuery = await blocks.getDate(startTime);
   const endTimeBlockQuery = await blocks.getDate(endTime);
@@ -115,6 +120,6 @@ export async function getFees(
       token1AmountTotal = token1AmountTotal + parseFloat(token1Amount)
       
     });
-    console.log(`Collected ${token0AmountTotal} of ${poolTokenInfo.token0Name} and ${token1AmountTotal} of ${poolTokenInfo.token1Name} in the specied pool, price and time range`);
+    console.log(`....... RESULTS: Collected ${token0AmountTotal} of ${poolTokenInfo.token0Name} and ${token1AmountTotal} of ${poolTokenInfo.token1Name} in the specified pool, price and time range....`);
   }
 }
