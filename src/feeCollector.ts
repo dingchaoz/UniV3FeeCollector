@@ -9,8 +9,8 @@ import { ethers } from "ethers";
 import { collectEventABI, collectEventNameTypes } from "./constants";
 import * as uniSdk from "@uniswap/v3-sdk";
 import { jsonRpcProvider } from "./utils";
-import { getPoolImmutables } from "./v3Methods";
-import { ChainId, Fetcher } from "@uniswap/sdk";
+import { getPoolImmutables,getTokenImmutables } from "./v3Methods";
+
 
 const alchemyProvider = initProvider();
 const iface = new ethers.utils.Interface(collectEventABI);
@@ -22,24 +22,21 @@ export interface PoolTokenInfo {
   tickSpacing: number;
   decimal0: number;
   decimal1: number;
-  tokenName0: string;
-  tokenName1: string;
+  token0Name: string;
+  token1Name: string;
 }
 
 export async function getPoolTokenInfo(pool: string): Promise<PoolTokenInfo> {
-  console.log(`pool is`, pool);
-  console.log(`provider is`, jsonRpcProvider);
 
   const res = await getPoolImmutables(
-    "0xCBCdF9626bC03E24f779434178A73a0B4bad62eD",
+    pool,
     jsonRpcProvider
   );
   const tickSpacing = res.tickSpacing;
   const token0Address = res.token0;
   const token1Address = res.token1;
-  const chainId = ChainId.MAINNET;
-  const token0 = await Fetcher.fetchTokenData(chainId, token0Address);
-  const token1 = await Fetcher.fetchTokenData(chainId, token1Address);
+  const token0 = await getTokenImmutables(token0Address, jsonRpcProvider)
+  const token1 = await getTokenImmutables(token1Address, jsonRpcProvider)
   const decimal0 = token0.decimals;
   const decimal1 = token1.decimals;
 
@@ -47,8 +44,8 @@ export async function getPoolTokenInfo(pool: string): Promise<PoolTokenInfo> {
     tickSpacing: tickSpacing,
     decimal0: decimal0,
     decimal1: decimal1,
-    tokenName0: token0.name,
-    tokenName1: token1.name,
+    token0Name: token0.name,
+    token1Name: token1.name,
   } as PoolTokenInfo;
 }
 
@@ -106,15 +103,18 @@ export async function getFees(
       fromBlock: fromBlockHex,
       toBlock: toBlockHex,
     });
-    console.log("logs are", logs);
+
+    let token0AmountTotal = 0
+    let token1AmountTotal = 0
 
     logs.forEach((log) => {
       const decoded = iface.parseLog(log);
       const token0Amount = ethers.utils.formatUnits(decoded.args[4], 8);
       const token1Amount = ethers.utils.formatUnits(decoded.args[5], 18);
-      const tickLower = decoded.args[2];
-      const tickUpper = decoded.args[3];
-      console.log(tickLower, token0Amount, tickUpper, token1Amount);
+      token0AmountTotal = token0AmountTotal + parseFloat(token0Amount)
+      token1AmountTotal = token1AmountTotal + parseFloat(token1Amount)
+      
     });
+    console.log(`Collected ${token0AmountTotal} of ${poolTokenInfo.token0Name} and ${token1AmountTotal} of ${poolTokenInfo.token1Name} in the specied pool, price and time range`);
   }
 }

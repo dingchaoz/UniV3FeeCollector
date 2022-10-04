@@ -1,4 +1,4 @@
-import { poolImmutablesAbi } from "./constants";
+import { poolImmutablesAbi,tokenImmutablesAbi } from "./constants";
 import { ethers } from "ethers";
 import { Address } from "cluster";
 
@@ -17,11 +17,24 @@ export async function getPoolImmutables(poolAddress: string, provider) {
     poolImmutablesAbi,
     provider
   );
-  console.log(`pool contract`, poolContract);
   const PoolImmutables = {
     token0: await poolContract.token0(),
     token1: await poolContract.token1(),
     tickSpacing: await poolContract.tickSpacing(),
   };
   return PoolImmutables;
+}
+
+export async function getTokenImmutables(tokenAddress: string, provider) {
+  const tokenContract = new ethers.Contract(
+    tokenAddress,
+    tokenImmutablesAbi,
+    provider
+  );
+  const TokenImmutables = {
+    name: await tokenContract.name(),
+    symbol: await tokenContract.symbol(),
+    decimals: await tokenContract.decimals(),
+  };
+  return TokenImmutables;
 }

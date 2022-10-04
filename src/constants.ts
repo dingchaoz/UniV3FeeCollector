@@ -12,3 +12,10 @@ export const poolImmutablesAbi = [
   "function tickSpacing() external view returns (int24)",
   "function maxLiquidityPerTick() external view returns (uint128)",
 ];
+
+export const tokenImmutablesAbi = [
+  "function decimals() view returns (uint8)",
+    "function symbol() view returns (string)",
+    "function name() view returns (string)",
+
+]
