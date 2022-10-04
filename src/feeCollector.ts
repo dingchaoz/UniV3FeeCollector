@@ -26,6 +26,11 @@ export interface PoolTokenInfo {
   token1Name: string;
 }
 
+/**
+ * Function to get tick spacing, tokens name, decimals from pool address
+ * @param pool address of the pool to check
+ * @returns PoolTokenInfo interface
+ */
 export async function getPoolTokenInfo(pool: string): Promise<PoolTokenInfo> {
   console.log(`.....Fetching pool information.... `)
   const res = await getPoolImmutables(
@@ -50,19 +55,43 @@ export async function getPoolTokenInfo(pool: string): Promise<PoolTokenInfo> {
   } as PoolTokenInfo;
 }
 
+/**
+ * Function to get nearest usable tick from price,
+ * It first computes tick from price based onf the formula that 1.0001 to the power of tick number === price
+ * then uses uniswap v3 sdk to return a closest usable tick from a input tick
+ * @param price price to be converted to tick
+ * @param token0Decimal decimal of token0
+ * @param token1Decimal decimal of token1
+ * @param tickSpacing tick spacing
+ * @returns tick
+ */
 export function getNearestTickFromPrice(
   price: number,
   token0Decimal: number,
   token1Decimal: number,
-  tickSpacing: number
+  tickSpacing: number,
+  floor: boolean
 ): number {
   const scaledPrice = (price * 10 ** token1Decimal) / 10 ** token0Decimal;
-
-  const tick = Math.floor(logBase(Math.sqrt(scaledPrice), base));
+  let tick: number
+  if (floor) {
+    tick = Math.floor(logBase(Math.sqrt(scaledPrice), base));
+  } else {
+    tick = Math.ceil(logBase(Math.sqrt(scaledPrice), base));
+  }
   const nearestUsableTick = uniSdk.nearestUsableTick(tick, tickSpacing);
   return nearestUsableTick;
 }
 
+/**
+ * The major function to get collected fees, it uses eth_log to filter Collect events only emitted from the specified pool
+ * and from the starting and ending block, as well as in the specified ticks range
+ * @param pool address of pool 
+ * @param priceLower lower price of the tick range for fee collection
+ * @param priceUpper upper price of the tick range for fee collection
+ * @param startTime start time of the time window for fee collection
+ * @param endTime end time of the time window for fee collection
+ */
 export async function getFees(
   pool: string,
   priceLower: number,
@@ -82,13 +111,15 @@ export async function getFees(
     priceLower,
     token0Decimal,
     token1Decimal,
-    tickSpacing
+    tickSpacing,
+    true
   );
   const nearestUsableTickUpper = getNearestTickFromPrice(
     priceUpper,
     token0Decimal,
     token1Decimal,
-    tickSpacing
+    tickSpacing,
+    false
   );
 
   const tickLowerHexPadded = intToPaddedHex(nearestUsableTickLower, tickBytes);
