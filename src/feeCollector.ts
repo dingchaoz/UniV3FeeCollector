@@ -203,22 +203,23 @@ export async function getFees(
         );
         token0AmountTotal = token0AmountTotal + parseFloat(token0Amount);
         token1AmountTotal = token1AmountTotal + parseFloat(token1Amount);
+
+        const receipt = await alchemyProvider.core.getTransactionReceipt(txHash);
+        const txLogs = receipt!.logs;
+        const burnEvent = txLogs!.filter((l) => l.topics[0] === burnEventSig);
+        if (burnEvent.length === 1) {
+          console.log(`..... Found one Burn event from the tx ${txHash}`);
+          const decoded = iburnFace.parseLog(burnEvent[0]);
+          const token0Amount = ethers.utils.formatUnits(decoded.args[4], 8);
+          const token1Amount = ethers.utils.formatUnits(decoded.args[5], 18);
+          console.log(
+            `......Removed ${token0Amount} token0 and ${token1Amount} token1`
+          );
+          token0AmountTotal = token0AmountTotal - parseFloat(token0Amount);
+          token1AmountTotal = token1AmountTotal - parseFloat(token1Amount);
+        }
       }
 
-      const receipt = await alchemyProvider.core.getTransactionReceipt(txHash);
-      const txLogs = receipt!.logs;
-      const burnEvent = txLogs!.filter((l) => l.topics[0] === burnEventSig);
-      if (burnEvent.length === 1) {
-        console.log(`..... Found one Burn event from the tx ${txHash}`);
-        const decoded = iburnFace.parseLog(burnEvent[0]);
-        const token0Amount = ethers.utils.formatUnits(decoded.args[4], 8);
-        const token1Amount = ethers.utils.formatUnits(decoded.args[5], 18);
-        console.log(
-          `......Removed ${token0Amount} token0 and ${token1Amount} token1`
-        );
-        token0AmountTotal = token0AmountTotal - parseFloat(token0Amount);
-        token1AmountTotal = token1AmountTotal - parseFloat(token1Amount);
-      }
     }
     console.log(
       `....... RESULTS: Collected ${token0AmountTotal} of ${poolTokenInfo.token0Name} and ${token1AmountTotal} of ${poolTokenInfo.token1Name} in the specified pool, price and time range....`
